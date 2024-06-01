@@ -4,6 +4,8 @@ import torch
 from PIL import Image, ImageDraw
 from torchvision.ops import box_iou
 
+# TODO: this doesn't work?
+
 # Load the model
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device)
@@ -11,7 +13,7 @@ model, preprocess = clip.load("ViT-B/32", device)
 # Load your image
 image_path = "beautiful-golden-retriever-dog-lie-260nw-1570104319.jpg"
 image = Image.open(image_path)
-image_tensor = preprocess(image).unsqueeze(0).to(device)
+image_tensor = preprocess(image).unsqueeze(0).to(device)  # type: ignore
 
 # Define the text description of the icon you are looking for
 text_description = "dog"
@@ -49,7 +51,7 @@ image_regions = []
 for box in boxes:
     x1, y1, x2, y2 = box.tolist()
     region = image.crop((x1, y1, x2, y2))
-    region_tensor = preprocess(region).unsqueeze(0).to(device)
+    region_tensor = preprocess(region).unsqueeze(0).to(device)  # type: ignore
     image_regions.append(region_tensor)
 
 image_regions = torch.cat(image_regions, dim=0)
@@ -71,12 +73,12 @@ top_boxes = boxes[top_indices]
 draw = ImageDraw.Draw(image)
 for box in top_boxes:
     x1, y1, x2, y2 = box.tolist()
-    draw.rectangle([(x1, y1), (x2, y2)], outline="blue", width=2)
+    draw.rectangle([(x1, y1), (x2, y2)], outline="blue", width=2)  # type: ignore
 
 # Draw the best bounding box in a different color
 best_box = top_boxes[-1]
 x1, y1, x2, y2 = best_box.tolist()
-draw.rectangle([(x1, y1), (x2, y2)], outline="green", width=2)
+draw.rectangle([(x1, y1), (x2, y2)], outline="green", width=2)  # type: ignore
 
 # Print the best bounding box
 print(

@@ -44,7 +44,7 @@ async def main(url):
         draw = ImageDraw.Draw(image)
         for box in bounding_boxes:
             draw.rectangle(
-                [box["x"], box["y"], box["x"] + box["width"], box["y"] + box["height"]],
+                [box["x"], box["y"], box["x"] + box["width"], box["y"] + box["height"]],  # type: ignore
                 outline="red",
                 width=2,
             )
