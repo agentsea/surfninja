@@ -15,7 +15,7 @@ torch = "^2.3.0"
 torchvision = "^0.18.0"
 clip = {git = "https://github.com/openai/CLIP.git"}
 ftfy = "^6.2.0"
-agentdesk = "^0.2.83"
+agentdesk = "^0.2.84"
 
 
 [tool.poetry.group.dev.dependencies]
