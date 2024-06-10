@@ -16,6 +16,13 @@ torchvision = "^0.18.0"
 clip = {git = "https://github.com/openai/CLIP.git"}
 ftfy = "^6.2.0"
 agentdesk = "^0.2.84"
+pytesseract = "^0.3.10"
+pandas = "^2.2.2"
+basicsr = "^1.4.2"
+replicate = "^0.26.0"
+surfkit = "^0.1.205"
+sqlalchemy = "^2.0.30"
+fastapi = {version = "^0.109", extras = ["all"]}
 
 
 [tool.poetry.group.dev.dependencies]

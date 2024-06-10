@@ -1,7 +1,10 @@
 import base64
+import io
 from io import BytesIO
 from typing import List, Tuple
 
+import replicate
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -458,3 +461,50 @@ def create_composite_image(image_text_pairs: List[Tuple[str, str]]) -> Image.Ima
 
     # Save the new composite image
     return composite_image
+
+
+def upscale_image(img: Image.Image, scale: int = 4) -> Image.Image:
+
+    # Convert the PIL image to bytes
+    image_bytes = io.BytesIO()
+    img.save(image_bytes, format="JPEG")
+    image_bytes.seek(0)
+
+    # Run the replicate model
+    output = replicate.run(
+        "nightmareai/real-esrgan:350d32041630ffbe63c8352783a26d94126809164e54085352f8326e53999085",
+        input={"image": image_bytes, "scale": scale, "face_enhance": False},
+    )
+    # Fetch the image
+    response = requests.get(output)  # type: ignore
+    response.raise_for_status()
+
+    # Open the image with PIL
+    image = Image.open(BytesIO(response.content))
+
+    return image
+
+
+def draw_red_box(
+    image: Image.Image, point: Tuple[int, int], padding: int
+) -> Image.Image:
+    """
+    Draw a red box around a point in an image using padding.
+
+    :param image_path: Path to the input image
+    :param point: Tuple (x, y) indicating the center of the box
+    :param padding: Padding around the point to determine the box size
+    """
+    # Open the image
+    draw = ImageDraw.Draw(image)
+
+    # Calculate the box coordinates using padding
+    left = point[0] - padding
+    top = point[1] - padding
+    right = point[0] + padding
+    bottom = point[1] + padding
+
+    # Draw the red box
+    draw.rectangle([left, top, right, bottom], outline="red", width=3)
+
+    return image
