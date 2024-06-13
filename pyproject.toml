@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-mllm = "^0.1.31"
+mllm = {version="^0.1.35", extras=["gemini"]}
 pillow = "^10.3.0"
 playwright = "^1.44.0"
 torch = "^2.3.0"
