@@ -109,3 +109,8 @@ Solve a task
 surfkit solve --description "Search for common varieties of french ducks" \
 --device george --agent-file ./agent.yaml --runtime process --kill
 ```
+
+## Community
+
+Come join us on [Discord](https://discord.gg/hhaq7XYPS6).
+
