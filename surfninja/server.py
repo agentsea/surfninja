@@ -13,7 +13,7 @@ from surfkit.server.routes import task_router
 from .agent import Agent, router
 
 # Configure logging
-logger: Final = logging.getLogger("surfmonsta")
+logger: Final = logging.getLogger("surfninja")
 logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.INFO)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     host = os.getenv("SERVER_HOST", "0.0.0.0")
 
     uvicorn.run(
-        "surfmonsta.server:app",
+        "surfninja.server:app",
         host=host,
         port=int(port),
         reload=reload,
