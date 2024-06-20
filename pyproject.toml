@@ -20,9 +20,9 @@ pytesseract = "^0.3.10"
 pandas = "^2.2.2"
 basicsr = "^1.4.2"
 replicate = "^0.26.0"
-surfkit = "^0.1.205"
 sqlalchemy = "^2.0.30"
 fastapi = {version = "^0.109", extras = ["all"]}
+surfkit = "^0.1.223"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -25,12 +25,12 @@ logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
 console = Console(force_terminal=True)
 
 
-class SurfMonstaConfig(BaseModel):
+class SurfNinjaConfig(BaseModel):
     pass
 
 
-class SurfMonsta(TaskAgent):
-    """A GUI desktop agent that slices up the image"""
+class SurfNinja(TaskAgent):
+    """A nimble GUI surfer"""
 
     def solve_task(
         self,
@@ -104,7 +104,7 @@ class SurfMonsta(TaskAgent):
                 "You are an AI assistant which uses a devices to accomplish tasks. "
                 f"Your current task is {task.description}, and your available tools are {tools} "
                 "For each screenshot I will send you please return the result chosen action as  "
-                f"raw JSON adhearing to the schema {V1ActionSelection.model_json_schema()} "
+                f"a raw JSON object adhearing to the schema {V1ActionSelection.model_json_schema()} "
                 "Let me know when you are ready and I'll send you the first screenshot"
             ),
         )
@@ -152,7 +152,7 @@ class SurfMonsta(TaskAgent):
         """Take an action
 
         Args:
-            desktop (DesktopWithOCR): Desktop to use
+            desktop (DesktopWithSemMouse): Desktop to use
             task (str): Task to accomplish
             thread (RoleThread): Role thread for the task
 
@@ -293,34 +293,34 @@ class SurfMonsta(TaskAgent):
         return [Desktop]
 
     @classmethod
-    def config_type(cls) -> Type[SurfMonstaConfig]:
+    def config_type(cls) -> Type[SurfNinjaConfig]:
         """Type of config
 
         Returns:
-            Type[DinoConfig]: Config type
+            Type[SurfNinjaConfig]: Config type
         """
-        return SurfMonstaConfig
+        return SurfNinjaConfig
 
     @classmethod
-    def from_config(cls, config: SurfMonstaConfig) -> "SurfMonsta":
+    def from_config(cls, config: SurfNinjaConfig) -> "SurfNinja":
         """Create an agent from a config
 
         Args:
             config (DinoConfig): Agent config
 
         Returns:
-            SurfMonsta: The agent
+            SurfNinja: The agent
         """
-        return SurfMonsta()
+        return SurfNinja()
 
     @classmethod
-    def default(cls) -> "SurfMonsta":
+    def default(cls) -> "SurfNinja":
         """Create a default agent
 
         Returns:
-            SurfMonsta: The agent
+            SurfNinja: The agent
         """
-        return SurfMonsta()
+        return SurfNinja()
 
     @classmethod
     def init(cls) -> None:
@@ -328,4 +328,4 @@ class SurfMonsta(TaskAgent):
         return
 
 
-Agent = SurfMonsta
+Agent = SurfNinja

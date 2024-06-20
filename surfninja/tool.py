@@ -4,11 +4,9 @@ import os
 from agentdesk.device import Desktop
 from mllm import Router
 from rich.console import Console
-from rich.json import JSON
-from taskara import Task
+from taskara import Task, TaskStatus
 from toolfuse import Tool, action
 
-from .img import image_to_b64
 from .prompt import (
     ClickTarget,
     apply_move,
@@ -85,33 +83,47 @@ class DesktopWithSemMouse(Tool):
 
         for step in range(max_steps):
             print("\n---- checking if task is finished...")
-            cursor_type = det_cursor_type(self.desktop)
+            if self.task.remote:
+                self.task.refresh()
+            console.print("task status: ", self.task.status.value)
+            if (
+                self.task.status == TaskStatus.CANCELING
+                or self.task.status == TaskStatus.CANCELED
+            ):
+                console.print(f"task is {self.task.status}", style="red")
+                if self.task.status == TaskStatus.CANCELING:
+                    self.task.status = TaskStatus.CANCELED
+                    self.task.save()
+                return
+
+            cursor_type = det_cursor_type(self.desktop, router, self.task)
             self.task.post_message(
                 role="assistant",
                 msg=f"Step {step} cursor type '{cursor_type}'",
                 thread="debug",
             )
 
+            check_goal = is_finished(self.desktop, target, router, self.task)
+            self.task.post_message(
+                role="assistant",
+                msg=f"Step {step} check goal '{check_goal.model_dump()}'",
+                thread="debug",
+            )
+
+            if check_goal.done:
+                print("task is done")
+                if type == "single":
+                    self.desktop.click()
+                elif type == "double":
+                    self.desktop.double_click()
+                return
+
             print("cursor type: ", cursor_type.type)
             if cursor_type.type != "default":
-                check_goal = is_finished(self.desktop, target)
-                self.task.post_message(
-                    role="assistant",
-                    msg=f"Step {step} check goal '{check_goal.model_dump()}'",
-                    thread="debug",
-                )
-
-                if check_goal.done:
-                    print("task is done")
-                    if type == "single":
-                        self.desktop.click()
-                    elif type == "double":
-                        self.desktop.double_click()
-                    return
 
                 print("task is not finished but cursor is not default")
                 # TODO: this should be async, take an image and calc offline
-                hindsight_target = describe_location(self.desktop)
+                hindsight_target = describe_location(self.desktop, router, self.task)
                 self.task.post_message(
                     role="assistant",
                     msg=f"Step {step} extra hindsight target '{hindsight_target.model_dump()}'",
@@ -121,7 +133,7 @@ class DesktopWithSemMouse(Tool):
                 print("created hindsight target: ", hindsight_target.model_dump())
 
             print("\n---- step: ", step)
-            direct = get_move_direction(self.desktop, target)
+            direct = get_move_direction(self.desktop, target, router, self.task)
             self.task.post_message(
                 role="assistant",
                 msg=f"Step {step} move direction '{direct.model_dump()}'",
@@ -136,7 +148,7 @@ class DesktopWithSemMouse(Tool):
                 msg=f"Step {step} new screens",
                 thread="debug",
                 images=[
-                    image_to_b64(new_screen),
-                    image_to_b64(new_cursor),
+                    new_screen,
+                    new_cursor,
                 ],
             )

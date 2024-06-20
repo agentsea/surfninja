@@ -7,7 +7,7 @@
 
   <h1 align="center">SurfNinja</h1>
     <p align="center">
-    <img src="logo/SurfNinja-512x512.jpg" alt="SurfSlicer Logo" width="200" style="border-radius: 20px;">
+    <img src="https://storage.googleapis.com/guisurfer-assets/surf_ninja.png" alt="SurfSlicer Logo" width="200" style="border-radius: 20px;">
     </p>
   <p align="center">
     A precision based GUI surfer
@@ -113,4 +113,3 @@ surfkit solve --description "Search for common varieties of french ducks" \
 ## Community
 
 Come join us on [Discord](https://discord.gg/hhaq7XYPS6).
-
