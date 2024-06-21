@@ -4,6 +4,7 @@ from agentdesk import Desktop
 from mllm import RoleThread, Router
 from PIL import Image
 from pydantic import BaseModel, Field
+from skillpacks import V1ActionSelection
 from taskara import Task
 
 from surfninja.img import b64_to_image, crop_box_around, upscale_image
@@ -97,6 +98,7 @@ class AppExplorer:
 
 def describe_location(desktop: Desktop, router: Router, task: Task) -> ClickTarget:
     """Describe the current location of the mouse"""
+    print("describing_location()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()
@@ -137,6 +139,7 @@ def check_click_validity(
     task: Task,
 ) -> ClickValidityCheck:
     """Describe the current location of the mouse"""
+    print("checking_click_validity()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()
@@ -164,8 +167,46 @@ def check_click_validity(
     return resp.parsed
 
 
+class ExpectationReview(BaseModel):
+    review: str = Field(
+        description="A review of the action expectation and what occured"
+    )
+    accuracy: int = Field(
+        description="The accuracy score of the expectation, and how close it was to the actual action. Can be 0 to 100. A score of 70 is passing"
+    )
+
+
+def review_expectation(
+    desktop: Desktop, router: Router, task: Task, action: V1ActionSelection
+) -> ExpectationReview:
+    """Review action expectations"""
+    print("review_expectation()")
+
+    thread = RoleThread()
+    b64_img = desktop.take_screenshot()
+    img = b64_to_image(b64_img)
+
+    thread.post(
+        role="user",
+        msg=f"""You are an agent performing tasks on a desktop GUI. You just performed an action on the desktop. 
+        I'm going to send you two images. The first is of the desktop before performing the action. The second is of the desktop after the action.
+        The action you performed was {action.model_dump_json()}. Please review the action and its effects and return a JSON object conforming to the schema {ExpectationReview.model_json_schema()}.
+        Please return just the raw json. For example {{"review": "I expected the login page to show up and it did", "accuracy": 100}}
+    """,
+        images=[img],
+    )
+    resp = router.chat(thread, expect=ExpectationReview, namespace="review_expectation")
+    task.add_prompt(resp.prompt)
+
+    if not resp.parsed:
+        raise ValueError("No click area found")
+
+    return resp.parsed
+
+
 def get_targets(desktop: Desktop, router: Router, task: Task) -> ClickTargets:
     """Generate targets from a desktop screenshot"""
+    print("get_targets()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()
@@ -211,6 +252,7 @@ def get_move_direction(
     desktop: Desktop, target: ClickTarget, router: Router, task: Task
 ) -> MoveDirection:
     """Generate the next direction to move the mouse (Δx, Δy)"""
+    print("get_move_direction()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()
@@ -250,6 +292,7 @@ def apply_move(
     desktop: Desktop, direction: MoveDirection
 ) -> Tuple[Image.Image, Image.Image]:
     """Apply a mouse movement to the desktop"""
+    print("apply_move()")
 
     current_coords = desktop.mouse_coordinates()
     print("current_cords: ", current_coords)
@@ -284,6 +327,7 @@ class CursorType(BaseModel):
 
 def det_cursor_type(desktop: Desktop, router: Router, task: Task) -> CursorType:
     """Detect the cursor type"""
+    print("det_cursor_type()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()
@@ -332,6 +376,7 @@ def is_finished(
     desktop: Desktop, target: ClickTarget, router: Router, task: Task
 ) -> CheckGoal:
     """Check if the target has been reached"""
+    print("is_finished()")
 
     thread = RoleThread()
     b64_img = desktop.take_screenshot()

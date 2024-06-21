@@ -7,9 +7,12 @@ from rich.console import Console
 from taskara import Task, TaskStatus
 from toolfuse import Tool, action
 
+from surfninja.img import b64_to_image
+
 from .prompt import (
     ClickTarget,
     apply_move,
+    check_click_validity,
     describe_location,
     det_cursor_type,
     get_move_direction,
@@ -27,7 +30,9 @@ class DesktopWithSemMouse(Tool):
     """A desktop replaces mouse click actions with semantic description rather than coordinates"""
 
     def __init__(
-        self, task: Task, desktop: Desktop, data_path: str = "./.data"
+        self,
+        task: Task,
+        desktop: Desktop,
     ) -> None:
         """
         Initialize and open a URL in the application.
@@ -35,7 +40,6 @@ class DesktopWithSemMouse(Tool):
         Args:
             task: Agent task. Defaults to None.
             desktop: Desktop instance to wrap.
-            data_path (str, optional): Path to data. Defaults to "./.data".
         """
         super().__init__(wraps=desktop)
         self.desktop = desktop
@@ -69,6 +73,9 @@ class DesktopWithSemMouse(Tool):
         )
         max_steps = 10
 
+        b64_img = self.desktop.take_screenshot()
+        starting_img = b64_to_image(b64_img)
+
         target = ClickTarget(
             description=description,
             location=location,
@@ -94,6 +101,17 @@ class DesktopWithSemMouse(Tool):
                 if self.task.status == TaskStatus.CANCELING:
                     self.task.status = TaskStatus.CANCELED
                     self.task.save()
+                return
+
+            validity_check = check_click_validity(
+                self.desktop, starting_img, target, router, self.task
+            )
+            print("click validity check: ", validity_check)
+            if not validity_check.is_valid:
+                console.print(
+                    f"click target '{target.model_dump()}' is no longer valid",
+                    style="red",
+                )
                 return
 
             cursor_type = det_cursor_type(self.desktop, router, self.task)

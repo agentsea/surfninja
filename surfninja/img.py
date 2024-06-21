@@ -464,7 +464,7 @@ def create_composite_image(image_text_pairs: List[Tuple[str, str]]) -> Image.Ima
 
 
 def upscale_image(img: Image.Image, scale: int = 4) -> Image.Image:
-
+    print(f"Upscaling image by {scale}x")
     # Convert the PIL image to bytes
     image_bytes = io.BytesIO()
     img.save(image_bytes, format="JPEG")
