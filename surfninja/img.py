@@ -7,6 +7,8 @@ import replicate
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
+from .util import console
+
 
 class Box:
     """
@@ -464,7 +466,7 @@ def create_composite_image(image_text_pairs: List[Tuple[str, str]]) -> Image.Ima
 
 
 def upscale_image(img: Image.Image, scale: int = 4) -> Image.Image:
-    print(f"Upscaling image by {scale}x")
+    console.print(f"Upscaling image by {scale}x")
     # Convert the PIL image to bytes
     image_bytes = io.BytesIO()
     img.save(image_bytes, format="JPEG")
@@ -481,6 +483,59 @@ def upscale_image(img: Image.Image, scale: int = 4) -> Image.Image:
 
     # Open the image with PIL
     image = Image.open(BytesIO(response.content))
+
+    console.print("Upscaling complete")
+    return image
+
+
+def annotate_corners_with_coordinates(image: Image.Image) -> Image.Image:
+    """Annotate the corners of an upscaled image with the relative coordinates from the center of a 200x200 image."""
+    # Define the font and size
+    try:
+        font = ImageFont.truetype("arial.ttf", 30)
+    except IOError:
+        print("\n\n!!! Falling back to default font.")
+        font = ImageFont.load_default()
+
+    draw = ImageDraw.Draw(image)
+
+    # Original 200x200 coordinates relative to the center
+    coordinates = {
+        "top_left": (-100, 100),
+        "top_right": (100, 100),
+        "bottom_left": (-100, -100),
+        "bottom_right": (100, -100),
+    }
+
+    # Positions in the upscaled image to place the text
+    positions = {
+        "top_left": (20, 20),
+        "top_right": (image.width - 250, 20),
+        "bottom_left": (20, image.height - 100),
+        "bottom_right": (image.width - 250, image.height - 100),
+    }
+
+    # Annotate each corner with the corresponding coordinates
+    for corner, (coord_x, coord_y) in coordinates.items():
+        text = f"({coord_x}, {coord_y})"
+        position = positions[corner]
+
+        # Calculate text size
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+
+        # Draw red circle background
+        draw.ellipse(
+            [
+                (position[0] - 20, position[1] - 20),
+                (position[0] + text_width + 20, position[1] + text_height + 20),
+            ],
+            fill="red",
+        )
+
+        # Draw yellow text
+        draw.text(position, text, fill="yellow", font=font)
 
     return image
 

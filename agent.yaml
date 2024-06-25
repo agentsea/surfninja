@@ -18,6 +18,7 @@ runtimes:
 llm_providers:
   preference:
     - "gpt-4o"
+    - "anthropic/claude-3-5-sonnet-20240620"
     - "gpt-4-turbo"
     - "anthropic/claude-3-opus-20240229"
 env_opts:

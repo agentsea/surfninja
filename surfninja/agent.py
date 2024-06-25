@@ -7,7 +7,6 @@ from typing import Final, List, Optional, Tuple, Type
 from agentdesk.device import Desktop
 from devicebay import Device
 from pydantic import BaseModel
-from rich.console import Console
 from rich.json import JSON
 from skillpacks.server.models import V1ActionSelection
 from surfkit.agent import TaskAgent
@@ -16,13 +15,14 @@ from tenacity import before_sleep_log, retry, stop_after_attempt
 from threadmem import RoleMessage, RoleThread
 from toolfuse.util import AgentUtils
 
+from .img import b64_to_image
+from .prompt import review_expectation, review_task
 from .tool import DesktopWithSemMouse, router
+from .util import console
 
 logging.basicConfig(level=logging.INFO)
 logger: Final = logging.getLogger(__name__)
 logger.setLevel(int(os.getenv("LOG_LEVEL", str(logging.DEBUG))))
-
-console = Console(force_terminal=True)
 
 
 class SurfNinjaConfig(BaseModel):
@@ -182,6 +182,7 @@ class SurfNinja(TaskAgent):
 
             # Take a screenshot of the desktop and post a message with it
             screenshot_b64 = desk.desktop.take_screenshot()
+            starting_img = b64_to_image(screenshot_b64)
             task.post_message(
                 "assistant",
                 "current image",
@@ -211,7 +212,6 @@ class SurfNinja(TaskAgent):
                 expect=V1ActionSelection,
                 agent_id=self.name(),
             )
-            task.add_prompt(response.prompt)
 
             try:
                 # Post to the user letting them know what the modle selected
@@ -242,6 +242,13 @@ class SurfNinja(TaskAgent):
                     f"✅ I think the task is done, please review the result: {selection.action.parameters['value']}",
                 )
                 task.status = TaskStatus.REVIEW
+
+                console.print("Having an LLM review the task...", style="white")
+                task_review = review_task(desk.desktop, router, task)
+                console.print(f"LLM review: {task_review.model_dump()}")
+                task.labels["llm_review"] = task_review.review
+                task.labels["llm_grade"] = str(task_review.grade)
+
                 task.save()
                 return _thread, True
 
@@ -275,6 +282,22 @@ class SurfNinja(TaskAgent):
             )
 
             _thread.add_msg(response.msg)
+
+            console.print("reviewing expectations...", style="white")
+            review = review_expectation(
+                desktop=desk.desktop,
+                router=router,
+                task=task,
+                starting_img=starting_img,
+                action=selection,
+            )
+            console.print(f"review: {review.model_dump()}")
+            if review.accuracy >= 70:
+                console.print("action was successful, marking prompt", style="green")
+                response.prompt.metadata["llm_review"] = review.review
+                response.prompt.metadata["llm_accuracy"] = review.accuracy
+
+            task.add_prompt(response.prompt)
             return _thread, False
 
         except Exception as e:

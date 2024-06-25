@@ -2,8 +2,7 @@ import logging
 import os
 
 from agentdesk.device import Desktop
-from mllm import Router
-from rich.console import Console
+from mllm import Prompt, Router
 from taskara import Task, TaskStatus
 from toolfuse import Tool, action
 
@@ -11,16 +10,18 @@ from surfninja.img import b64_to_image
 
 from .prompt import (
     ClickTarget,
+    MoveDirection,
     apply_move,
     check_click_validity,
     describe_location,
     det_cursor_type,
     get_move_direction,
     is_finished,
+    update_target_in_thread,
 )
+from .util import console
 
 router = Router.from_env()
-console = Console()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(int(os.getenv("LOG_LEVEL", logging.DEBUG)))
@@ -88,8 +89,12 @@ class DesktopWithSemMouse(Tool):
             thread="debug",
         )
 
+        move_thread = None
+        direct = None
+        move_response = None
+
         for step in range(max_steps):
-            print("\n---- checking if task is finished...")
+            console.print("\n---- checking if task is finished...")
             if self.task.remote:
                 self.task.refresh()
             console.print("task status: ", self.task.status.value)
@@ -106,7 +111,7 @@ class DesktopWithSemMouse(Tool):
             validity_check = check_click_validity(
                 self.desktop, starting_img, target, router, self.task
             )
-            print("click validity check: ", validity_check)
+            console.print("click validity check: ", validity_check)
             if not validity_check.is_valid:
                 console.print(
                     f"click target '{target.model_dump()}' is no longer valid",
@@ -121,25 +126,10 @@ class DesktopWithSemMouse(Tool):
                 thread="debug",
             )
 
-            check_goal = is_finished(self.desktop, target, router, self.task)
-            self.task.post_message(
-                role="assistant",
-                msg=f"Step {step} check goal '{check_goal.model_dump()}'",
-                thread="debug",
-            )
-
-            if check_goal.done:
-                print("task is done")
-                if type == "single":
-                    self.desktop.click()
-                elif type == "double":
-                    self.desktop.double_click()
-                return
-
-            print("cursor type: ", cursor_type.type)
+            console.print("cursor type: ", cursor_type.type)
             if cursor_type.type != "default":
 
-                print("task is not finished but cursor is not default")
+                console.print("task is not finished but cursor is not default")
                 # TODO: this should be async, take an image and calc offline
                 hindsight_target = describe_location(self.desktop, router, self.task)
                 self.task.post_message(
@@ -148,17 +138,41 @@ class DesktopWithSemMouse(Tool):
                     thread="debug",
                 )
                 # TODO: save as prompt
-                print("created hindsight target: ", hindsight_target.model_dump())
+                console.print(
+                    "created hindsight target: ", hindsight_target.model_dump()
+                )
+                if move_thread and direct and move_response:
+                    hindsight_thread = update_target_in_thread(
+                        move_thread,
+                        hindsight_target.description,
+                        hindsight_target.location,
+                        hindsight_target.purpose,
+                        hindsight_target.expectation,
+                    )
+                    hindsight_prompt = Prompt(
+                        thread=hindsight_thread,
+                        response=move_response.msg,
+                        namespace="hindsight_move",
+                        response_schema=MoveDirection,
+                        approved=True,
+                    )
+                    self.task.add_prompt(hindsight_prompt)
+                    console.print(
+                        "Added hindsight prompt: ",
+                        hindsight_prompt.to_v1().model_dump(),
+                    )
 
-            print("\n---- step: ", step)
-            direct = get_move_direction(self.desktop, target, router, self.task)
+            console.print("\n---- step: ", step)
+            direct, move_response, move_thread = get_move_direction(
+                self.desktop, target, router, self.task
+            )
             self.task.post_message(
                 role="assistant",
                 msg=f"Step {step} move direction '{direct.model_dump()}'",
                 thread="debug",
             )
 
-            print("\n---- move direction: ", direct.model_dump())
+            console.print("\n---- move direction: ", direct.model_dump())
 
             new_screen, new_cursor = apply_move(self.desktop, direct)
             self.task.post_message(
@@ -170,3 +184,18 @@ class DesktopWithSemMouse(Tool):
                     new_cursor,
                 ],
             )
+
+            check_goal = is_finished(self.desktop, target, router, self.task)
+            self.task.post_message(
+                role="assistant",
+                msg=f"Step {step} check goal '{check_goal.model_dump()}'",
+                thread="debug",
+            )
+
+            if check_goal.done:
+                console.print("task is done")
+                if type == "single":
+                    self.desktop.click()
+                elif type == "double":
+                    self.desktop.double_click()
+                return
