@@ -749,6 +749,12 @@ For example if you want to open the user settings simply return "open user setti
     return resp.msg.text, example
 
 
+class MoveMouse(BaseModel):
+    reason: str = Field(description="reason for moving the mouse to this location")
+    x: int = Field(description="x coordinate")
+    y: int = Field(description="y coordinate")
+
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_fixed(2),
@@ -773,7 +779,8 @@ def predict_env_delta_coords(
     rel_path = f"online_img/{action_id}.png"
 
     prompt = f"""I've provided you with an image of a desktop UI. We are trying to click the screen in the right location which will cause the following environment change: '{delta}'.
-The current mouse coordinates are [{coords_new[0]}, {coords_new[1]}]. Please return the new coordinates in the form [x, y]. For example if we need to open the user settings and the user button is located at (450, 740) we would return [450, 740].
+The current mouse coordinates are [{coords_new[0]}, {coords_new[1]}]. Please return a raw JSON object adhearing to the schema {MoveMouse.model_json_schema()}. For example 
+if our desired delta is to highlight the search bar so we can type in it we could return {{"reason": "we need to click on the search bar which is in the top left part of the screen", "x": 100, "y": 300}}.
     """
 
     thread.post(
@@ -782,11 +789,13 @@ The current mouse coordinates are [{coords_new[0]}, {coords_new[1]}]. Please ret
         images=[img],
     )
 
-    resp = router.chat(thread)
+    resp = router.chat(thread, expect=MoveMouse)
 
-    coords = json.loads(resp.msg.text)
+    print("parsing response: ", resp.msg.text)
+    if not resp.parsed:
+        raise ValueError("could not parse response")
 
-    if coords[0] == coords_new[0] and coords[1] == coords_new[1]:
+    if resp.parsed.x == coords_new[0] and resp.parsed.y == coords_new[1]:
         raise ValueError("coords are the same")
 
     def apply_example(new_delta: str):
@@ -803,13 +812,13 @@ The current mouse coordinates are [{coords_new[0]}, {coords_new[1]}]. Please ret
                 },
                 {
                     "from": "assistant",
-                    "value": resp.msg.text,
+                    "value": f"[{resp.parsed.x}, {resp.parsed.y}]",  # type: ignore
                 },
             ],
         }
         return example
 
-    return coords, apply_example
+    return [resp.parsed.x, resp.parsed.y], apply_example
 
 
 def predict_click_delta(
@@ -859,8 +868,11 @@ or if there is no difference in the images then simple return 'no change'."""
     resp = router.chat(thread)
     print("click delta response: ", resp.msg.text)
 
-    if resp.msg.text.lower().strip() == "no change":
+    if "no change" in resp.msg.text.lower().strip():
+        print("\n!> there was no change to the environment")
         return []
+
+    print("\n!> there was a change to the environment")
 
     return resp.msg.text, [
         {
@@ -909,10 +921,11 @@ def gather_data2(
     if not next_delta:
         raise ValueError("No next delta")
     data.append(example)
+    print("\nadded example: ", example)
     print("next delta: ", next_delta)
 
     # predict the mouse coordinates
-    print("\n--- predicting the mouse coordinates...")
+    print("\n--- predicting the delta mouse coordinates...")
     coords, apply_delta_coords = predict_env_delta_coords(
         next_delta, desktop, router, run_id
     )
@@ -923,19 +936,32 @@ def gather_data2(
     time.sleep(2)
 
     # predict the mouse coordinates again
-    print("\n--- predicting the mouse coordinates again...")
+    print("\n--- predicting the current mouse coordinates...")
     example = predict_current_coords(desktop, run_id)
     data.append(example)
+    print("\nadded example: ", example)
 
     # predict the click delta
     print("\n--- predicting the click delta...")
-    ground_delta, examples = predict_click_delta(desktop, router, run_id)
-    data.extend(examples)
+    import traceback
+
+    try:
+        ground_delta, examples = predict_click_delta(desktop, router, run_id)
+        data.extend(examples)
+        print("\nadded examples: ", examples)
+    except Exception as e:
+        print(e)
+        print("\n!> could not predict the click delta, skipping")
+        traceback.print_exc()
+        raise
 
     if examples:
         print("\n--- applying the click delta...")
         example = apply_delta_coords(ground_delta)
-        data.extend(example)
+        data.append(example)
+        print("\nadded example: ", example)
+
+        # TODO: describe the old click location
 
     # predict the current browser URL
     print("\n--- recognizing the URL...")
@@ -943,6 +969,7 @@ def gather_data2(
     data.append(example)
     print("url: ", current_url)
     print("url example: ", example)
+    print("\nadded example: ", example)
 
     # check if we have left the site
     if match_url not in current_url:
@@ -975,6 +1002,8 @@ def examples_to_markdown(json_data, output_file):
     markdown_content = "# Conversations and Images\n\n"
 
     for item in json_data:
+        print("item: ", item)
+        print("type: ", type(item))
         markdown_content += f"## ID: {item['id']}\n\n"
         markdown_content += "### Image\n"
         for image_path in item["image"]:
@@ -991,14 +1020,74 @@ def examples_to_markdown(json_data, output_file):
     print(f"Markdown file '{output_file}' has been created.")
 
 
-def online_train_single():
+import traceback
+
+
+def gather_env_data(base_url: str, match_url: str):
+    print("--- gathering environment data...")
+    vm = Desktop.find(name="focused-lamport")
+    desktop = Desktop.from_vm(vm[0])
+    router = Router.from_env()
+
+    print(f"opening url {base_url}")
+    desktop.open_url(base_url)
+    time.sleep(20)
+
+    random_string = generate_random_string()
+    run_name = f"ssa-{random_string}"
+    print(f"\n---run name: {run_name}\n")
+
+    runs_dir = "runs"
+    os.makedirs(f"{runs_dir}/{run_name}/online_img/", exist_ok=True)
+
+    i = 0
+    total_examples = 0
+    while True:
+        i += 1
+        print(f"\n>>>\n>>> train loop {i}...\n>>>\n")
+        # Gather and process new data
+        print("gathering data...")
+        b64_img = desktop.take_screenshot()
+        current_img = b64_to_image(b64_img)
+        current_img.save("current.png")
+
+        print("checking if page is loading...")
+        loading = is_page_loading(desktop, router)
+        print("loading: ", loading)
+        if loading:
+            print("page is loading...")
+            time.sleep(5)
+            continue
+
+        try:
+            new_data = gather_data2(base_url, match_url, desktop, router, run_name)
+            print("\ngot new data: ", new_data)
+            total_examples += len(new_data)
+
+            for data in new_data:
+                print("\ndata: ", data)
+
+            file_path = f"runs/{run_name}/online_{i}.json"
+            with open(file_path, "w") as f:
+                json.dump(new_data, f, indent=4)
+
+            examples_to_markdown(new_data, f"runs/{run_name}/online_{i}.md")
+            print(f"Data saved to {file_path}")
+            print("total examples: ", total_examples)
+
+        except Exception as e:
+            print("\n---- failue collecting data: ", e)
+            traceback.print_exc()
+            print("trying the loop again...")
+            continue
+
+
+def online_train_single(base_url: str, match_url: str):
     print("finding desktop...")
     vm = Desktop.find(name="focused-lamport")
     desktop = Desktop.from_vm(vm[0])
     router = Router.from_env()
 
-    base_url = "https://airbnb.com"
-    match_url = "airbnb"
     print(f"opening url {base_url}")
     desktop.open_url(base_url)
     time.sleep(20)
@@ -1049,4 +1138,23 @@ def online_train_single():
 
 
 if __name__ == "__main__":
-    online_train_single()
+    import argparse
+    from urllib.parse import urlparse
+
+    def get_main_domain(url):
+        parsed_url = urlparse(url)
+        domain_parts = parsed_url.netloc.split(".")
+        return domain_parts[0]
+
+    parser = argparse.ArgumentParser(description="SSA flags")
+
+    # Add a flag (boolean argument)
+    parser.add_argument("-u", "--url", type=str, required=True, help="url to learn")
+
+    args = parser.parse_args()
+
+    if not args.url:
+        print("please provide a url to learn with the --url flag")
+        exit(1)
+
+    gather_env_data(args.url, get_main_domain(args.url))
