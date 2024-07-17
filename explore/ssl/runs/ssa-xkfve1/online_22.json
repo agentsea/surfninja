@@ -1,0 +1,99 @@
+[
+    {
+        "id": "32873504-ba09-4c32-a519-c1297234985d",
+        "image": [
+            "online_img/eaba500d-0edb-4fbe-a06d-e75a99fa920d.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of a desktop UI. We are trying to test this webpage, please randomly select a way you can change the environment through clicking.\nFor example if you want to open the user settings simply return \"open user settings\", if you want to highlight the search bar so you can type in it simply return \"highlight search bar\".\n"
+            },
+            {
+                "from": "assistant",
+                "value": "Let's highlight the search bar so we can enter a query. \n\nTherefore, the action is: \"highlight search bar\"."
+            }
+        ]
+    },
+    {
+        "id": "1de96972-0aa4-4066-ba99-c81c1734e407",
+        "image": [
+            "online_img/fd54be95-60ce-47f9-b58e-92e869c829e9.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> return the mouse coordinates for the GUI image of size [1280, 1024] in the form [x, y]"
+            },
+            {
+                "from": "assistant",
+                "value": "[250, 35]"
+            }
+        ]
+    },
+    {
+        "id": "4694e47c-bcc6-46da-8870-6b289de3a36b",
+        "image": [
+            "online_img/c53755a2-6261-4a17-bb0f-701c5f7b4183.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of an ubuntu desktop GUI with the size [1280, 1024]. In detail, predict the state of the screen after you click the mouse at its current coordinates [250, 35]"
+            },
+            {
+                "from": "assistant",
+                "value": "A tooltip is displayed showing details for the browser tab labeled 'Go VIP with Kevin Hart in Los Angeles, California, ...'."
+            }
+        ]
+    },
+    {
+        "id": "bbb15597-b8cd-48ce-98c6-12beea42b739",
+        "image": [
+            "online_img/c53755a2-6261-4a17-bb0f-701c5f7b4183.png",
+            "online_img/8716a74e-9f39-4bd2-93c1-8f5d71def0da.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "I've provided you with two images of a desktop GUI, first is an image of the state of the GUI before the mouse was clicked. \nThe second image is an image of the state of the GUI after the mouse was clicked. Please describe the current state of the screen in detail, paying attention to any changes in the screen that may have occured from the click. \nThis will be used to train a world model, so please return the response in a form that only describes the changes in the screen e.g. 'A login screen where the user can input their credentials or use social login' \nor if there is no difference in the images then simple return 'no change'."
+            },
+            {
+                "from": "assistant",
+                "value": "A tooltip is displayed showing details for the browser tab labeled 'Go VIP with Kevin Hart in Los Angeles, California, ...'."
+            }
+        ]
+    },
+    {
+        "id": "56189606-9644-4d68-a0f3-12945c6939e5",
+        "image": [
+            "online_img/39494042-8126-4fdf-96b1-d42705f10cc3.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of a desktop UI. We are trying to click the screen in the right location which will cause the following environment change: 'A tooltip is displayed showing details for the browser tab labeled 'Go VIP with Kevin Hart in Los Angeles, California, ...'.'.\nThe current mouse coordinates are [630, 50]. Please return the new coordinates in the form [x, y]. For example if we need to open the user settings and the user button is located at (450, 740) we would return [450, 740].\n    "
+            },
+            {
+                "from": "assistant",
+                "value": "[250, 35]"
+            }
+        ]
+    },
+    {
+        "id": "b6f19abe-4e57-47fe-aea1-75023aab400f",
+        "image": [
+            "online_img/9e157623-2dd0-4c5b-98fc-6a8596150b24.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of an ubuntu desktop GUI with a chromium browser open. What URL is the browser currently navigated to?"
+            },
+            {
+                "from": "assistant",
+                "value": "https://www.airbnb.com/rooms/41700516?source_impression_id=p3_1696039477_da1ly0ta0ORsNM17&category_tag=Tag%3A8851&children=0&enable_m3_private_room=true"
+            }
+        ]
+    }
+]

@@ -870,7 +870,7 @@ or if there is no difference in the images then simple return 'no change'."""
 
     if "no change" in resp.msg.text.lower().strip():
         print("\n!> there was no change to the environment")
-        return []
+        return None, []
 
     print("\n!> there was a change to the environment")
 
@@ -1023,9 +1023,11 @@ def examples_to_markdown(json_data, output_file):
 import traceback
 
 
-def gather_env_data(base_url: str, match_url: str):
+def gather_env_data(base_url: str, match_url: str, desktop_name: str):
     print("--- gathering environment data...")
-    vm = Desktop.find(name="focused-lamport")
+    vm = Desktop.find(name=desktop_name)
+    if not vm:
+        raise ValueError(f"Desktop {desktop_name} not found")
     desktop = Desktop.from_vm(vm[0])
     router = Router.from_env()
 
@@ -1082,9 +1084,14 @@ def gather_env_data(base_url: str, match_url: str):
             continue
 
 
-def online_train_single(base_url: str, match_url: str):
+def online_train_single(base_url: str, match_url: str, desktop_name: str):
     print("finding desktop...")
-    vm = Desktop.find(name="focused-lamport")
+    vm = Desktop.find(name=desktop_name)
+    print("vm: ", vm)
+    if not vm:
+        print("no vm found")
+        return
+    
     desktop = Desktop.from_vm(vm[0])
     router = Router.from_env()
 
@@ -1098,6 +1105,8 @@ def online_train_single(base_url: str, match_url: str):
 
     runs_dir = "runs"
     os.makedirs(f"{runs_dir}/{run_name}/online_img/", exist_ok=True)
+
+    reset_len = 30
 
     i = 0
     total_examples = 0
@@ -1117,7 +1126,7 @@ def online_train_single(base_url: str, match_url: str):
             print("page is loading...")
             time.sleep(5)
             continue
-
+            
         try:
             new_data = gather_data(base_url, match_url, desktop, router, run_name)
             print("\ngot new data: ", new_data)
@@ -1135,6 +1144,11 @@ def online_train_single(base_url: str, match_url: str):
             print("\n---- failue collecting data: ", e)
             print("trying the loop again...")
             continue
+    
+        if i % reset_len == 0:
+            print(f"resetting url {base_url}")
+            desktop.open_url(base_url)
+            time.sleep(20)
 
 
 if __name__ == "__main__":
@@ -1150,6 +1164,7 @@ if __name__ == "__main__":
 
     # Add a flag (boolean argument)
     parser.add_argument("-u", "--url", type=str, required=True, help="url to learn")
+    parser.add_argument("-d", "--desktop", type=str, required=True, help="desktop to use")
 
     args = parser.parse_args()
 
@@ -1157,4 +1172,4 @@ if __name__ == "__main__":
         print("please provide a url to learn with the --url flag")
         exit(1)
 
-    gather_env_data(args.url, get_main_domain(args.url))
+    gather_env_data(args.url, get_main_domain(args.url), args.desktop)

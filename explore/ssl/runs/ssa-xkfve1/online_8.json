@@ -1,0 +1,99 @@
+[
+    {
+        "id": "2a4faf0f-abde-47f8-8433-cacea1c79b6b",
+        "image": [
+            "online_img/7a84ef1e-4c02-427d-86db-c55138deccea.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of a desktop UI. We are trying to test this webpage, please randomly select a way you can change the environment through clicking.\nFor example if you want to open the user settings simply return \"open user settings\", if you want to highlight the search bar so you can type in it simply return \"highlight search bar\".\n"
+            },
+            {
+                "from": "assistant",
+                "value": "Click \"Notify me\" button."
+            }
+        ]
+    },
+    {
+        "id": "f86c68e2-7056-4c1f-b435-5fd7d50685b5",
+        "image": [
+            "online_img/fed16f55-90fe-42a9-8114-814faf193167.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> return the mouse coordinates for the GUI image of size [1280, 1024] in the form [x, y]"
+            },
+            {
+                "from": "assistant",
+                "value": "[1279, 860]"
+            }
+        ]
+    },
+    {
+        "id": "9b963bb2-ba5c-40eb-bfcd-eff2f16f7fa7",
+        "image": [
+            "online_img/fbd41f0c-1272-4a14-a6c4-d59a3137016b.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of an ubuntu desktop GUI with the size [1280, 1024]. In detail, predict the state of the screen after you click the mouse at its current coordinates [1279, 860]"
+            },
+            {
+                "from": "assistant",
+                "value": "A detailed description below:\n\nThe screen content has scrolled down, revealing additional information about the event. Specifically:\n1. Additional sections \"Watch A-list comedy all-stars\" and \"Turn up for tequila time\" have appeared.\n2. There is a paragraph of text providing more details about the event.\n3. The \"Meet your Host\" section with information about the host has been revealed, including a small profile image and some details about their background."
+            }
+        ]
+    },
+    {
+        "id": "18f90f2e-2e68-4028-bbab-f5fe95b5cb60",
+        "image": [
+            "online_img/fbd41f0c-1272-4a14-a6c4-d59a3137016b.png",
+            "online_img/e03262ea-76a7-457c-bf23-fc272128ccb8.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "I've provided you with two images of a desktop GUI, first is an image of the state of the GUI before the mouse was clicked. \nThe second image is an image of the state of the GUI after the mouse was clicked. Please describe the current state of the screen in detail, paying attention to any changes in the screen that may have occured from the click. \nThis will be used to train a world model, so please return the response in a form that only describes the changes in the screen e.g. 'A login screen where the user can input their credentials or use social login' \nor if there is no difference in the images then simple return 'no change'."
+            },
+            {
+                "from": "assistant",
+                "value": "A detailed description below:\n\nThe screen content has scrolled down, revealing additional information about the event. Specifically:\n1. Additional sections \"Watch A-list comedy all-stars\" and \"Turn up for tequila time\" have appeared.\n2. There is a paragraph of text providing more details about the event.\n3. The \"Meet your Host\" section with information about the host has been revealed, including a small profile image and some details about their background."
+            }
+        ]
+    },
+    {
+        "id": "3d6b2ef8-bd54-4a30-a10b-5451a79d37e9",
+        "image": [
+            "online_img/88b7269b-0b0c-4aca-9f0c-b900ee37ad8c.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of a desktop UI. We are trying to click the screen in the right location which will cause the following environment change: 'A detailed description below:\n\nThe screen content has scrolled down, revealing additional information about the event. Specifically:\n1. Additional sections \"Watch A-list comedy all-stars\" and \"Turn up for tequila time\" have appeared.\n2. There is a paragraph of text providing more details about the event.\n3. The \"Meet your Host\" section with information about the host has been revealed, including a small profile image and some details about their background.'.\nThe current mouse coordinates are [1020, 540]. Please return the new coordinates in the form [x, y]. For example if we need to open the user settings and the user button is located at (450, 740) we would return [450, 740].\n    "
+            },
+            {
+                "from": "assistant",
+                "value": "[1320, 860]"
+            }
+        ]
+    },
+    {
+        "id": "c2f05808-c41c-45f1-9883-c0361a6f4228",
+        "image": [
+            "online_img/4d60cb2e-8b41-41ea-b995-450faf467890.png"
+        ],
+        "conversations": [
+            {
+                "from": "user",
+                "value": "<ImageHere> I've provided you with an image of an ubuntu desktop GUI with a chromium browser open. What URL is the browser currently navigated to?"
+            },
+            {
+                "from": "assistant",
+                "value": "https://www.airbnb.com/rooms/1131087648837536437?adults=1&category_tag=Tag%3A8851&children=0&enable_m3_private_room=true"
+            }
+        ]
+    }
+]
