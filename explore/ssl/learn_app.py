@@ -128,7 +128,7 @@ In many cases the mouse cursor will not be directly over anything in which case 
     if not resp.parsed:
         raise ValueError("No click area found")
 
-    prompt = f"<ImageHere> describe the current mouse cursor position [{coords[0]}, {coords[1]}]. Return a JSON object adhearing to the schema {ClickTarget.model_json_schema()}"
+    prompt = f"describe the current mouse cursor position [{coords[0]}, {coords[1]}]. Return a JSON object adhearing to the schema {ClickTarget.model_json_schema()}"
 
     return resp.parsed, {
         "id": str(uuid.uuid4()),
@@ -203,17 +203,17 @@ def predict_current_coords(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    coords_prompt = f"<ImageHere> return the mouse coordinates for the GUI image of size [{size[0]}, {size[1]}] in the form [x, y]"
+    coords_prompt = f"Return the mouse coordinates for the GUI image of size [{size[0]}, {size[1]}] in the form [x, y]"
 
     return {
         "id": str(uuid.uuid4()),
         "image": [rel_path],
         "conversations": [
             {
-                "from": "user",
+                "from": "human",
                 "value": coords_prompt,
             },
-            {"from": "assistant", "value": f"[{coords[0]}, {coords[1]}]"},
+            {"from": "bot", "value": f"[{coords[0]}, {coords[1]}]"},
         ],
     }
 
@@ -239,7 +239,7 @@ def predict_click(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    click_prompt = f"<ImageHere> I've provided you with an image of an ubuntu desktop GUI with the size [{size[0]}, {size[1]}]. In detail, predict the state of the screen after you click the mouse at its current coordinates [{coords[0]}, {coords[1]}]"
+    click_prompt = f"I've provided you with an image of an ubuntu desktop GUI with the size [{size[0]}, {size[1]}]. In detail, predict the state of the screen after you click the mouse at its current coordinates [{coords[0]}, {coords[1]}]"
 
     print("clicking")
     desktop.click()
@@ -297,7 +297,7 @@ def recognize_url(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    url_prompt = f"<ImageHere> I've provided you with an image of an ubuntu desktop GUI with a chromium browser open. What URL is the browser currently navigated to?"
+    url_prompt = f"I've provided you with an image of an ubuntu desktop GUI with a chromium browser open. What URL is the browser currently navigated to?"
 
     thread = RoleThread()
     thread.post(
@@ -316,11 +316,11 @@ def recognize_url(
         "image": [rel_path],
         "conversations": [
             {
-                "from": "user",
+                "from": "human",
                 "value": url_prompt,
             },
             {
-                "from": "assistant",
+                "from": "bot",
                 "value": resp.parsed.url,
             },
         ],
@@ -452,7 +452,7 @@ Please return just raw json. For example {{"description": "A green button resemb
         "conversations": [
             {
                 "from": "user",
-                "value": "<ImageHere> " + prompt,
+                "value": prompt,
             },
             {
                 "from": "assistant",
@@ -542,14 +542,14 @@ def predict_delta_mouse_coords(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    url_prompt = f"""<ImageHere> I've provided you with an image of an ubuntu desktop GUI, our goal is to click on the target: 
+    url_prompt = f"""I've provided you with an image of an ubuntu desktop GUI, our goal is to click on the target: 
     
     {target.model_dump_json()} 
     
     The screen size is [{size[0]}, {size[1]}] and the mouse is located at [{coords[0]}, {coords[1]}] Please provide the mouse coordinates of the center of the target in the form [x, y]"""
 
     def apply_learn(trgt, new_coords):
-        prompt = f"""<ImageHere> I've provided you with an image of an ubuntu desktop GUI, our goal is to click on the target: 
+        prompt = f"""I've provided you with an image of an ubuntu desktop GUI, our goal is to click on the target: 
         
 {trgt.model_dump_json()} 
         
@@ -594,10 +594,10 @@ def describe_delta_mouse_coords(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    delta_prompt = f"""<ImageHere> I've provided you with an image of an ubuntu desktop GUI, the screen size is [{size[0]}, {size[1]}] and the mouse is currently located at [{coords[0]}, {coords[1]}]. We are moving the mouse to {new_coords}, please predict what the mouse will be located above in that position. Please be descriptive."""
+    delta_prompt = f"""I've provided you with an image of an ubuntu desktop GUI, the screen size is [{size[0]}, {size[1]}] and the mouse is currently located at [{coords[0]}, {coords[1]}]. We are moving the mouse to {new_coords}, please predict what the mouse will be located above in that position. Please be descriptive."""
 
     def apply_learn(description):
-        prompt = f"""<ImageHere> I've provided you with an image of an ubuntu desktop GUI, the screen size is [{size[0]}, {size[1]}] and the mouse is currently located at [{coords[0]}, {coords[1]}]. We are moving the mouse to {new_coords}, please predict what the mouse cursor will be located over in that position. Please be descriptive."""
+        prompt = f"""I've provided you with an image of an ubuntu desktop GUI, the screen size is [{size[0]}, {size[1]}] and the mouse is currently located at [{coords[0]}, {coords[1]}]. We are moving the mouse to {new_coords}, please predict what the mouse cursor will be located over in that position. Please be descriptive."""
 
         example = {
             "id": str(uuid.uuid4()),
@@ -736,11 +736,11 @@ For example if you want to open the user settings simply return "open user setti
         "image": [rel_path],
         "conversations": [
             {
-                "from": "user",
-                "value": "<ImageHere> " + prompt,
+                "from": "human",
+                "value": prompt,
             },
             {
-                "from": "assistant",
+                "from": "bot",
                 "value": resp.msg.text,
             },
         ],
@@ -807,11 +807,11 @@ The current mouse coordinates are [{coords_new[0]}, {coords_new[1]}]. Please ret
             "image": [rel_path],
             "conversations": [
                 {
-                    "from": "user",
-                    "value": "<ImageHere> " + new_prompt,
+                    "from": "human",
+                    "value": new_prompt,
                 },
                 {
-                    "from": "assistant",
+                    "from": "bot",
                     "value": f"[{resp.parsed.x}, {resp.parsed.y}]",  # type: ignore
                 },
             ],
@@ -836,7 +836,7 @@ def predict_click_delta(
     img.save(img_path)
     rel_path = f"online_img/{action_id}.png"
 
-    click_prompt = f"<ImageHere> I've provided you with an image of an ubuntu desktop GUI with the size [{size[0]}, {size[1]}]. In detail, predict the state of the screen after you click the mouse at its current coordinates [{coords[0]}, {coords[1]}]"
+    click_prompt = f"I've provided you with an image of an ubuntu desktop GUI with the size [{size[0]}, {size[1]}]. In detail, predict the state of the screen after you click the mouse at its current coordinates [{coords[0]}, {coords[1]}]"
 
     print("clicking")
     desktop.click()
@@ -856,6 +856,11 @@ def predict_click_delta(
 
     change_prompt = f"""I've provided you with two images of a desktop GUI, first is an image of the state of the GUI before the mouse was clicked. 
 The second image is an image of the state of the GUI after the mouse was clicked. Please describe the current state of the screen in detail, paying attention to any changes in the screen that may have occured from the click. 
+This will be used to train a world model, so please return the response in a form that only describes the changes in the screen e.g. 'A login screen where the user can input their credentials or use social login' 
+or if there is no difference in the images then simple return 'no change'."""
+    
+    change_prompt_compose = f"""Image1: <ImageHere>; Image2: <ImageHere>. I've provided you with two images of a desktop GUI, Image1 is of the state of the GUI before the mouse was clicked. 
+Image2 is an image of the state of the GUI after the mouse was clicked. Please describe the current state of the screen in detail, paying attention to any changes in the screen that may have occured from the click. 
 This will be used to train a world model, so please return the response in a form that only describes the changes in the screen e.g. 'A login screen where the user can input their credentials or use social login' 
 or if there is no difference in the images then simple return 'no change'."""
 
@@ -880,11 +885,11 @@ or if there is no difference in the images then simple return 'no change'."""
             "image": [rel_path],
             "conversations": [
                 {
-                    "from": "user",
+                    "from": "human",
                     "value": click_prompt,
                 },
                 {
-                    "from": "assistant",
+                    "from": "bot",
                     "value": resp.msg.text,
                 },
             ],
@@ -894,11 +899,11 @@ or if there is no difference in the images then simple return 'no change'."""
             "image": [rel_path, rel_path_new],
             "conversations": [
                 {
-                    "from": "user",
-                    "value": change_prompt,
+                    "from": "human",
+                    "value": change_prompt_compose,
                 },
                 {
-                    "from": "assistant",
+                    "from": "bot",
                     "value": resp.msg.text,
                 },
             ],
